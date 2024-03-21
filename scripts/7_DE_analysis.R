@@ -36,6 +36,11 @@ if(redoMetadata){
 rownames(metadata) <- metadata$ID
 metadata$rpmh_scaled <- scale(metadata$rpmh)
 
+## remove some NAs for infected but not quantified samples
+metadata$Parasitemia_in_percent[is.na(metadata$Parasitemia_in_percent)] <- 
+min(metadata$Parasitemia_in_percent[metadata$Parasitemia_in_percent>0], na.rm=TRUE)
+metadata$Parasitemia_in_percent <- as.numeric(metadata$Parasitemia_in_percent)
+    
 # first filter the counts data to keep only host read counts 
 #and > 500 counts across all samples
 host_counts <-tagseqRNAfeatureCounts[!grepl("HEP_",rownames(tagseqRNAfeatureCounts)) &
@@ -58,6 +63,20 @@ dds_liver <- DESeqDataSetFromMatrix(countData = host_counts[,liverIDs],
 dds_liver <- DESeq(dds_liver)
 
 
+
+# constructing the liver DESeqdataset object with blood infection as condition of test
+dds_liverPas <- DESeqDataSetFromMatrix(countData = host_counts[,liverIDs],
+                                       colData = metadata[liverIDs,],
+                                       design = ~Season+Age_2category+Sex+
+                                           Parasitemia_in_percent,
+                                       tidy = FALSE)
+
+# differential expression analysis (uses wald test statistics)
+dds_liverPas <- DESeq(dds_liverPas)
+
+
+
+
 # constructing the spleen DESeqdataset object with rpmh_scaled as condition of test
 dds_spleen <- DESeqDataSetFromMatrix(countData = host_counts[,spleenIDs],
                               colData = metadata[spleenIDs,],
@@ -69,11 +88,29 @@ dds_spleen <- DESeqDataSetFromMatrix(countData = host_counts[,spleenIDs],
 dds_spleen <- DESeq(dds_spleen)
 
 
+# constructing the spleen DESeqdataset object with rpmh_scaled as condition of test
+dds_spleenPas <- DESeqDataSetFromMatrix(countData = host_counts[,spleenIDs],
+                              colData = metadata[spleenIDs,],
+                              design = ~Season+Age_2category+Sex+
+                                  Parasitemia_in_percent,
+                              tidy = FALSE)
+
+# differential expression analysis (uses wald test statistics)
+dds_spleenPas <- DESeq(dds_spleenPas)
+
+
 # getting the results table for liver DETs
 list_of_results_liver  <- lapply(resultsNames(dds_liver), function(n){
       results(dds_liver, name = n)
 })
 names(list_of_results_liver) <- paste0("liver:", resultsNames(dds_liver))
+
+
+list_of_results_liverPas  <- lapply(resultsNames(dds_liverPas), function(n){
+      results(dds_liverPas, name = n)
+})
+names(list_of_results_liverPas) <- paste0("liverPas:", resultsNames(dds_liverPas))
+
 
 # getting the results table for spleen DETs
 list_of_results_spleen  <- lapply(resultsNames(dds_spleen), function(n){
@@ -81,8 +118,16 @@ list_of_results_spleen  <- lapply(resultsNames(dds_spleen), function(n){
 })
 names(list_of_results_spleen) <- paste0("spleen:", resultsNames(dds_spleen))
 
+# getting the results table for spleen DETs
+list_of_results_spleenPas  <- lapply(resultsNames(dds_spleenPas), function(n){
+    results(dds_spleenPas, name = n)
+})
+names(list_of_results_spleenPas) <- paste0("spleenPas:", resultsNames(dds_spleenPas))
+
+
 ## combined liver and spleen list of DETs results
-list_of_results <- c(list_of_results_liver, list_of_results_spleen)
+list_of_results <- c(list_of_results_liver, list_of_results_liverPas,
+                     list_of_results_spleen, list_of_results_spleenPas)
 
 
 # list of transcripts with significant p value for all the conditions
@@ -111,10 +156,7 @@ DETs_liver <- c(list_of_liver_DETs, overall=list(rownames(list_of_results_liver[
 
 DETs_spleen <- c(list_of_spleen_DETs, overall=list(rownames(list_of_results_spleen[[1]])))
 
-
 saveRDS(DETs_ALL, "intermediateData/DETs_ALL.RDS")
-
-
 
 ### FROM HERE ONLY VISUALISATION (PLOTS) AND TABLES OUPUT
   
@@ -146,7 +188,72 @@ getOverlapMatrix(list_of_DETs[grep("spleen", names(list_of_DETs))])
 
 getOverlapMatrix(list_of_DETs)
 
-## overlap table of liver vs spleen rpmh scaled categories
+
+## overlap table of spleen Parasitemia categories vs spleen rpmh scaled
+table(SPL_RPM=rownames(list_of_results[[1]])%in%list_of_DETs[["spleen:rpmh_scaled"]],
+      SPL_PAS=rownames(list_of_results[[1]])%in%list_of_DETs[["spleenPas:Parasitemia_in_percent"]])
+
+
+chisq.test(table(SPL_RPM=rownames(list_of_results[[1]])%in%list_of_DETs[["spleen:rpmh_scaled"]],
+      SPL_PAS=rownames(list_of_results[[1]])%in%list_of_DETs[["spleenPas:Parasitemia_in_percent"]]))
+
+## Continuous scale agreement in spleen
+bothSpl <- as.data.frame(
+    cbind(Pas=list_of_results[["spleenPas:Parasitemia_in_percent"]]$log2FoldChange,
+          rpm=list_of_results[["spleen:rpmh_scaled"]]$log2FoldChange,
+          name=rownames(list_of_results[[1]])))
+
+bothSpl$Pas <- as.numeric(bothSpl$Pas)
+
+bothSpl$rpm <- as.numeric(bothSpl$rpm)
+
+
+spleenParaPlot <-
+    ggplot(bothSpl, aes(Pas, rpm, color=name%in%list_of_DETs[["spleen:rpmh_scaled"]])) +
+    geom_point(alpha=0.3) +
+    stat_smooth()
+
+ggsave("plots/SpleenBloodPara.png")
+
+cor(bothSpl$rpm, bothSpl$Pas)
+
+summary(lm(rpm ~ Pas, data=bothSpl))
+
+## overlap table of liver Parasitemia categories vs liver rpmh scaled
+table(LIV_RPM=rownames(list_of_results[[1]])%in%list_of_DETs[["liver:rpmh_scaled"]],
+      LIV_PAS=rownames(list_of_results[[1]])%in%list_of_DETs[["liverPas:Parasitemia_in_percent"]])
+
+chisq.test(table(LIV_RPM=rownames(list_of_results[[1]])%in%list_of_DETs[["liver:rpmh_scaled"]],
+      LIV_PAS=rownames(list_of_results[[1]])%in%list_of_DETs[["liverPas:Parasitemia_in_percent"]]))
+
+
+
+## Continuous scale agreement in spleen
+bothLiv <- as.data.frame(
+    cbind(Pas=list_of_results[["liverPas:Parasitemia_in_percent"]]$log2FoldChange,
+          rpm=list_of_results[["liver:rpmh_scaled"]]$log2FoldChange,
+          name=rownames(list_of_results[["liver:rpmh_scaled"]])))
+
+bothLiv$Pas <- as.numeric(bothLiv$Pas)
+
+bothLiv$rpm <- as.numeric(bothLiv$rpm)
+
+
+livParaPlot <-
+    ggplot(bothLiv, aes(Pas, rpm, color=name%in%list_of_DETs[["liver:rpmh_scaled"]])) +
+    geom_point(alpha=0.3) +
+    stat_smooth()
+
+ggsave("plots/LiverBloodPara.png", livParaPlot)
+
+
+cor(bothLiv$rpm, bothLiv$Pas)
+    
+summary(lm(rpm ~ Pas, data = bothLiv))
+
+
+
+## overlap table of liver vs spleen rpmh scaled 
 table(spleen=rownames(list_of_results[[1]])%in%list_of_DETs[["spleen:rpmh_scaled"]],
       liver=rownames(list_of_results[[1]])%in%list_of_DETs[["liver:rpmh_scaled"]])
 
