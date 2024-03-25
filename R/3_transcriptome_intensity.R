@@ -15,7 +15,7 @@ readcount <- FALSE
 
 # loading the dataframe (file containing the read counts) from the features count step
 if(readcount){
-  source("scripts/3_featurecounts.R")
+  source("R/1_featurecounts.R")
 }else{
   tagseqRNAfeatureCounts <- readRDS("intermediateData/countTable.RDS")
 }

@@ -12,13 +12,13 @@ redoAnnotation <- FALSE
 
 
 if(redoAnnotation){
-    source("scripts/6_annotation.R")
+    source("R/4_annotation.R")
 } else{
    allLocusGO <- readRDS("intermediateData/GOtermAnnot.RDS")
 }
 
 if(redoDE){
-    source("scripts/DE_analysis.R")
+    source("R/5_DE_analysis.R")
 } else {
   DETs_ALL  <- readRDS("intermediateData/DETs_ALL.RDS")
 }

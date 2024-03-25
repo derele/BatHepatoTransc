@@ -4,7 +4,7 @@
 
 #first install and load the package Rsubread which has featuresCount as a built in package
 #BiocManager::install("Rsubread")
-library("Rsubread")
+library(Rsubread)
 library(tidyr)
 library(dplyr)
 library(stringr)

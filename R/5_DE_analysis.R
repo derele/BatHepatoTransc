@@ -23,13 +23,13 @@ redoCounting <- FALSE
 redoMetadata <- FALSE
 
 if(redoCounting){
-    source("scripts/3_featurecounts.R")
+    source("R/1_featurecounts.R")
 }else{
     tagseqRNAfeatureCounts <- readRDS("intermediateData/countTable.RDS")
 }
 
 if(redoMetadata){
-    source("scripts/4_metadata.R")
+    source("R/2_metadata.R")
 }else{
     metadata <- read.csv("intermediateData/metadata_expanded.csv")
 }
