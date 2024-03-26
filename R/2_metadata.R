@@ -84,10 +84,5 @@ metadata$Parasitemia_in_percent[is.na(metadata$Parasitemia_in_percent)] <-
 min(metadata$Parasitemia_in_percent[metadata$Parasitemia_in_percent>0], na.rm=TRUE)
 metadata$Parasitemia_in_percent <- as.numeric(metadata$Parasitemia_in_percent)
     
-# first filter the counts data to keep only host read counts 
-#and > 500 counts across all samples
-host_counts <-tagseqRNAfeatureCounts[!grepl("HEP_",rownames(tagseqRNAfeatureCounts)) &
-                                     rowSums(tagseqRNAfeatureCounts)>500
-                                    ,]
 
 write.csv(metadata, "intermediateData/metadata_expanded.csv", row.names=FALSE)
