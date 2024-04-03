@@ -18,9 +18,14 @@ library(magrittr)
 
 
 ## We need the count data and the metadata for the DE analysis
-
 redoCounting <- FALSE
 redoMetadata <- FALSE
+
+## a 5% ADJUSTED p-value threshold
+adjpval_thresh <- 0.05
+## no fold-change threshold
+fc_thresh <- 0
+
 
 if(redoCounting){
     source("R/1_featurecounts.R")
@@ -54,8 +59,6 @@ dds_liver <- DESeqDataSetFromMatrix(countData = host_counts[,liverIDs],
 
 # differential expression analysis (uses wald test statistics)
 dds_liver <- DESeq(dds_liver)
-
-
 
 # constructing the liver DESeqdataset object with blood infection as condition of test
 dds_liverPas <- DESeqDataSetFromMatrix(countData = host_counts[,liverIDs],
@@ -121,6 +124,15 @@ names(list_of_results_spleenPas) <- paste0("spleenPas:", resultsNames(dds_spleen
 ## combined liver and spleen list of DETs results
 list_of_results <- c(list_of_results_liver, list_of_results_liverPas,
                      list_of_results_spleen, list_of_results_spleenPas)
+
+
+## adding a column for significance TRUE/FALSE
+list_of_results <- lapply(list_of_results, function(x){
+    x$significance10_any <- x$log2FoldChange > fc_thresh &
+        x$padj < adjpval_thresh
+    x
+})
+
 
 saveRDS(list_of_results, "intermediateData/DETs_ALL.RDS")
 

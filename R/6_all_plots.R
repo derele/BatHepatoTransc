@@ -21,7 +21,7 @@ if(redoAnnotation){
 if(redoDE){
     source("R/4_DE_analysis.R")
 } else {
-  DETs_ALL  <- readRDS("intermediateData/DETs_ALL.RDS")
+  res_ALL  <- readRDS("intermediateData/DETs_ALL.RDS")
 }
 
 ## ## the enrichment alnalysis is currently only in tables, directly
@@ -31,7 +31,24 @@ if(redoDE){
 ## if(redoEnrichment){ source("R/5_Enrichment.R") } else { DETs_ALL <-
 ## readRDS("intermediateData/GOtermAnnot.RDS") }
 
-### The fist basic DE tests using blood stage intenisty.
+### The first basic DE tests using blood stage intenisty.
+
+
+res_ALL[["spleenPas:Parasitemia_in_percent"]] %>%
+    as.data.frame() %>%
+    ggplot(aes(log2FoldChange, -log10(padj),
+               color = ifelse(padj < 0.1, "red", "black")))+
+    geom_point()
+
+
+res_ALL[["liverPas:Parasitemia_in_percent"]] %>%
+    as.data.frame() %>%
+    ggplot(aes(log2FoldChange, -log10(padj),
+               color = ifelse(padj < 0.1, "red", "black")))+
+    geom_point()
+
+           
+
 
 
 

@@ -23,9 +23,10 @@ if(redoDE){
     list_of_results  <- readRDS("intermediateData/DETs_ALL.RDS")
 }
 
-DETs_ALL  <- lapply(list_of_results, function(rdf){
-    rdf <- rdf[!is.na(rdf$padj),]
-    rownames(rdf[rdf$padj< 0.1,])
+
+## see the thresholds set for significance in the "R/4_DE_analysis.R"
+DETs_ALL  <- lapply(list_of_results, function(x){
+    rownames(x)[x$significance]
 })
 
 DETs_ALL[["overall"]] <- rownames(list_of_results[[1]])
