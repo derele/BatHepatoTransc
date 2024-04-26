@@ -31,31 +31,59 @@ if(redoDE){
 ## if(redoEnrichment){ source("R/5_Enrichment.R") } else { DETs_ALL <-
 ## readRDS("intermediateData/GOtermAnnot.RDS") }
 
+## set up plotting
+source("R/plot_setup.R")
+## special fonts!
+extrafont::loadfonts(device = "all") ## run every time
+
 ### The first basic DE tests using blood stage intenisty.
 
-
-res_ALL[["spleenPas:Parasitemia_in_percent"]] %>%
+Liver_Pas_Plot <- res_ALL[["liverPas:Parasitemia_in_percent"]] %>%
     as.data.frame() %>%
     ggplot(aes(log2FoldChange, -log10(padj),
-               color = ifelse(padj < 0.1, "red", "black")))+
-    geom_point()
+               fill = significance)) +
+    scale_y_continuous("Negative logarithm of adjusted p-value (-log10(adj-pval))",
+                       limits=c(0, 5.2)) +
+    scale_x_continuous("Log2 Fold-Change (per % blood parasitemia change)",
+                       limits=c(-4.2, 6.1)) +
+    geom_point(shape = 21, color = "white", size = 5, stroke = 0.7) +
+    scale_fill_manual(values = colors_significance, labels = c("> 0.05", "<= 0.05")) +
+    ggtitle("Differential expression in the liver") +
+    theme(legend.position = c(1, 0.84),  #  position within the plot
+          legend.background = element_rect(color = NA, fill = "white"),
+          legend.text = element_text(size = 14),
+          legend.title = element_text(size = 16),
+          axis.text = element_text(size = 14),
+          axis.title = element_text(size = 16),
+          strip.text = element_text(size = 14),
+          plot.title = element_text(hjust = 0.5)) +
+    guides(fill = guide_legend(title = "adjusted\np-value")) 
 
 
-res_ALL[["liverPas:Parasitemia_in_percent"]] %>%
-    as.data.frame() %>%
+
+Spleen_Pas_Plot <- res_ALL[["spleenPas:Parasitemia_in_percent"]] %>%
+    as_tibble() %>%
+    dplyr::filter(!is.na(significance))%>%
     ggplot(aes(log2FoldChange, -log10(padj),
-               color = ifelse(padj < 0.1, "red", "black")))+
-    geom_point()
+               fill = significance)) +
+    scale_y_continuous("", limits=c(0, 5.2)) +
+    scale_x_continuous("Log2 Fold-Change (per % blood parasitemia change)",
+                       limits=c(-4.2, 6.1)) +
+    scale_fill_manual(values = colors_significance, labels = c("> 0.05", "<= 0.05")) +
+    geom_point(shape = 21, color = "white", size = 5, stroke = 0.7) +
+    ggtitle("Differential expression in the spleen") +
+    theme(legend.position="none",
+          plot.title = element_text(hjust = 0.5))    
 
-           
 
-
-
-
+Fig1 <- ggpubr::ggarrange(Liver_Pas_Plot, Spleen_Pas_Plot,
+                          labels = c("a", "b"),
+                          ncol = 2, nrow = 1)
 
 
 # Scatter Plot of transcriptome infection estimates coloured by organ
-pdf("plots/scatter_plot_of_transcriptome_infection_estimates_coloured_by_organ.pdf")
+ggsave("figures/Fig1.png", Fig1, width = 16, height = 9, units = "in",
+       bg = 'white')
 
 ggplot(metadata, 
        aes(x = Parasitemia_in_percent, 
