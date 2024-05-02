@@ -8,6 +8,8 @@ library(dplyr)
 library(MASS)
 library(tidyverse)
 library(ggeffects)
+library(ggrain)
+
 
 redoDE <- FALSE
 redoAnnotation <- FALSE
@@ -23,6 +25,21 @@ if(redoDE){
 } else {
   res_ALL  <- readRDS("intermediateData/DETs_ALL.RDS")
 }
+
+### P-VALUE THRESHOLDS!!!
+## a 5% ADJUSTED p-value threshold
+adjpval_thresh <- 0.05
+## no fold-change threshold
+fc_thresh <- 0
+
+
+## adding a column for significance TRUE/FALSE
+res_ALL <- lapply(res_ALL, function(x){
+    x$significance <- abs(x$log2FoldChange) > fc_thresh &
+        x$padj < adjpval_thresh
+    x
+})
+
 
 ## ## the enrichment alnalysis is currently only in tables, directly
 ## ## produced in 5_Enrichment.R
@@ -76,13 +93,44 @@ Spleen_Pas_Plot <- res_ALL[["spleenPas:Parasitemia_in_percent"]] %>%
           plot.title = element_text(hjust = 0.5))    
 
 
-Fig1 <- ggpubr::ggarrange(Liver_Pas_Plot, Spleen_Pas_Plot,
-                          labels = c("a", "b"),
-                          ncol = 2, nrow = 1)
+
+Liver_Trans_Plot <- res_ALL[["liver:rpmh_scaled"]] %>%
+    as_tibble() %>%
+    dplyr::filter(!is.na(significance))%>%
+    ggplot(aes(log2FoldChange, -log10(padj),
+               fill = significance)) +
+    scale_y_continuous("Negative logarithm of adjusted p-value (-log10(adj-pval))",
+                       limits=c(0, 5.4)) +
+    scale_x_continuous("Log2 Fold-Change (per scaled rpmh)",
+                       limits=c(-2.5, 2.5)) +
+    scale_fill_manual(values = colors_significance, labels = c("> 0.05", "<= 0.05")) +
+    geom_point(shape = 21, color = "white", size = 5, stroke = 0.7) +
+    theme(legend.position="none",
+          plot.title = element_text(hjust = 0.5))    
+
+
+Spleen_Trans_Plot <- res_ALL[["spleen:rpmh_scaled"]] %>%
+    as_tibble() %>%
+    dplyr::filter(!is.na(significance))%>%
+    ggplot(aes(log2FoldChange, -log10(padj),
+               fill = significance)) +
+    scale_y_continuous("", limits=c(0, 5.4)) +
+    scale_x_continuous("Log2 Fold-Change (per scaled rpmh)",
+                       limits=c(-2.5, 2.5)) +
+    scale_fill_manual(values = colors_significance, labels = c("> 0.05", "<= 0.05")) +
+    geom_point(shape = 21, color = "white", size = 5, stroke = 0.7) +
+    theme(legend.position="none",
+          plot.title = element_text(hjust = 0.5))    
+
+
+Fig3 <- ggpubr::ggarrange(Liver_Pas_Plot, Spleen_Pas_Plot,
+                          Liver_Trans_Plot, Spleen_Trans_Plot,
+                          labels = c("a", "b", "c", "d"),
+                          ncol = 2, nrow = 2)
 
 
 # Scatter Plot of transcriptome infection estimates coloured by organ
-ggsave("figures/Fig1.png", Fig1, width = 16, height = 9, units = "in",
+ggsave("figures/Fig3.png", Fig3, width = 16, height = 16, units = "in",
        bg = 'white')
 
 ggplot(metadata, 
