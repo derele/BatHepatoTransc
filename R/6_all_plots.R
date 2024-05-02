@@ -10,9 +10,26 @@ library(tidyverse)
 library(ggeffects)
 library(ggrain)
 
-
+redoMetadat <- FALSE
 redoDE <- FALSE
 redoAnnotation <- FALSE
+
+if(redoMetadat){ 
+    source("R/2_metadata.R")
+}else{
+    metadata <- read.csv("intermediateData/metadata_expanded.csv")
+}
+
+## Figure 1: distribution of parasitemia (blood smears)
+ggplot(metadata, aes(x = Age_2category, y = Parasitemia_in_percent,
+                     fill = Age_2category)) +
+        geom_rain(rain.side="l", alpha=.5)
+
+ggplot(metadata, aes(x = Age_2category, y = Parasitemia_in_percent+1,
+                     fill = Age_2category)) +
+    geom_rain(rain.side="l", alpha=.5) +
+    scale_y_log10("parasitemia (log10 +1)")
+
 
 if(redoAnnotation){
     source("R/2_annotation.R")
