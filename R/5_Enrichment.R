@@ -20,16 +20,28 @@ if(redoAnnotation){
 if(redoDE){
     source("R/4_DE_analysis.R")
 } else {
-    list_of_results  <- readRDS("intermediateData/DETs_ALL.RDS")
+    res_ALL  <- readRDS("intermediateData/DETs_ALL.RDS")
 }
+
+## a 5% ADJUSTED p-value threshold
+adjpval_thresh <- 0.05
+## no fold-change threshold
+fc_thresh <- 0
+
+## adding a column for significance TRUE/FALSE
+res_ALL <- lapply(res_ALL, function(x){
+    x$significance <- abs(x$log2FoldChange) > fc_thresh &
+        x$padj < adjpval_thresh
+    x
+})
 
 
 ## see the thresholds set for significance in the "R/4_DE_analysis.R"
-DETs_ALL  <- lapply(list_of_results, function(x){
+DETs_ALL  <- lapply(res_ALL, function(x){
     rownames(x)[x$significance]
 })
 
-DETs_ALL[["overall"]] <- rownames(list_of_results[[1]])
+DETs_ALL[["overall"]] <- rownames(res_ALL[[1]])
 
 #### we need a list associating each gene ID with its (potentially
 #### multiple) GO terms. We transform the GO data frame to such a list

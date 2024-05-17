@@ -79,9 +79,13 @@ metadata$rpmh <- metadata$hepatocystis_transcriptome_parasitemia *
 
 metadata$rpmh_scaled <- scale(metadata$rpmh)
 
+## keep the original parasitemia in percent data!
+metadata$Parasitemia_in_percentO <- metadata$Parasitemia_in_percent
+
 ## remove some NAs for infected but not quantified samples
 metadata$Parasitemia_in_percent[is.na(metadata$Parasitemia_in_percent)] <- 
-min(metadata$Parasitemia_in_percent[metadata$Parasitemia_in_percent>0], na.rm=TRUE)
+    mean(metadata$Parasitemia_in_percent[metadata$Parasitemia_in_percent>0], na.rm=TRUE)
+
 metadata$Parasitemia_in_percent <- as.numeric(metadata$Parasitemia_in_percent)
     
 
