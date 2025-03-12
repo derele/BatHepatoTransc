@@ -1,2 +1,3 @@
 *.log
 /R/plot_setup.R~
+.Rproj.user

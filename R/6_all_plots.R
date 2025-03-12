@@ -11,6 +11,7 @@ library(ggeffects)
 library(ggrain)
 library(interpretCI)
 library(coin)
+library(extrafont)
 
 redoMetadat <- FALSE
 redoDE <- FALSE
