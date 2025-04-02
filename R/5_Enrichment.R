@@ -90,7 +90,7 @@ gene.table.topGO <- function(TOGO.list, fdr=0.1){
 MF_enrichment_tables <- lapply(MF_enrichment, gene.table.topGO)
 
 
-lapply(MF_enrichment_tables, head)
+lapply(MF_enrichment_tables, head, 30)
 
 MF_enrichment_tables["spleen:rpmh_scaled"]
 

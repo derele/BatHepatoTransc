@@ -112,9 +112,49 @@ list_of_results_spleenPas  <- lapply(resultsNames(dds_spleenPas), function(n){
 names(list_of_results_spleenPas) <- paste0("spleenPas:", resultsNames(dds_spleenPas))
 
 
+### DATA on REPRODUCTIVE STATUS!!!
+
+metadata$repo <- ifelse(grepl("Nonrepro", metadata$Class_DMR), "NoR", "YesR")
+
+
+# constructing the spleen DESeqdataset object with rpmh_scaled as condition of test
+dds_spleenRepo <- DESeqDataSetFromMatrix(countData = host_counts[,spleenIDs],
+                                         colData = metadata[spleenIDs,],
+                                         design = ~repo+
+                                           Parasitemia_in_percent,
+                                         tidy = FALSE)
+
+# differential expression analysis (uses wald test statistics)
+dds_spleenRepo <- DESeq(dds_spleenRepo)
+
+list_of_results_spleenREPO  <- lapply(resultsNames(dds_spleenRepo), function(n){
+  results(dds_spleenRepo, name = n)
+})
+
+names(list_of_results_spleenREPO) <- paste0("spleenREPO:", 
+                                            resultsNames(dds_spleenRepo))
+
+# constructing the spleen DESeqdataset object with rpmh_scaled as condition of test
+dds_liverRepo <- DESeqDataSetFromMatrix(countData = host_counts[,liverIDs],
+                                         colData = metadata[liverIDs,],
+                                         design = ~repo+
+                                           Parasitemia_in_percent,
+                                         tidy = FALSE)
+
+# differential expression analysis (uses wald test statistics)
+dds_liverRepo <- DESeq(dds_liverRepo)
+
+list_of_results_liverREPO  <- lapply(resultsNames(dds_liverRepo), function(n){
+  results(dds_liverRepo, name = n)
+})
+
+names(list_of_results_liverREPO) <- paste0("liverREPO:", 
+                                           resultsNames(dds_liverRepo))
+
 ## combined liver and spleen list of DETs results
 res_ALL <- c(list_of_results_liver, list_of_results_liverPas,
-             list_of_results_spleen, list_of_results_spleenPas)
+             list_of_results_spleen, list_of_results_spleenPas,
+             list_of_results_liverREPO, list_of_results_spleenREPO)
 
 saveRDS(res_ALL, "intermediateData/DETs_ALL.RDS")
 
